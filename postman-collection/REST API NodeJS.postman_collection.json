@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "b59237a7-b99e-401e-b0c6-39203c202949",
-		"name": "REST API NodeJS",
+		"_postman_id": "9dbb6c81-9ce7-4695-b62b-237a849b2fac",
+		"name": "EasyMocap Ui",
 		"description": "A boilerplate for REST API Development with Node.js and Expressjs",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -47,12 +47,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/auth/register?=",
+							"raw": "{{HOST}}/api/auth/register?=",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"auth",
@@ -96,12 +96,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/auth/login",
+							"raw": "{{HOST}}/api/auth/login",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"auth",
@@ -139,12 +139,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/auth/verify-otp",
+							"raw": "{{HOST}}/api/auth/verify-otp",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"auth",
@@ -177,12 +177,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/auth/resend-verify-otp",
+							"raw": "{{HOST}}/api/auth/resend-verify-otp",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"auth",
@@ -207,11 +207,6 @@
 								"name": "Content-Type",
 								"value": "application/x-www-form-urlencoded",
 								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDQwMzc0ODllY2I2ZDUyNjAzZDQ1ZjMiLCJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0aW5nIiwiZW1haWwiOiJ0ZXN0QHRlc3RpbmcuY29tIiwiaWF0IjoxNTY0NzI1NTMxLCJleHAiOjE1NjQ3MzI3MzF9.YEGMugzT_ijNgAeBYe4O6hZoidkG_hX9x-1QjQKuJYI",
-								"type": "text"
 							}
 						],
 						"body": {
@@ -235,12 +230,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/book",
+							"raw": "{{HOST}}/api/book",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"book"
@@ -254,19 +249,14 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDQwMzc0ODllY2I2ZDUyNjAzZDQ1ZjMiLCJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0aW5nIiwiZW1haWwiOiJ0ZXN0QHRlc3RpbmcuY29tIiwiaWF0IjoxNTY0NzQ0NzQ4LCJleHAiOjE1NjQ3NTE5NDh9.gE2DjhWgNmPFyy7K21MEC4bIm3gbbDicdE_eorFIZ0o",
-								"type": "text"
-							}
 						],
 						"url": {
-							"raw": "http://localhost:3000/api/book",
+							"raw": "{{HOST}}/api/book",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"book"
@@ -280,19 +270,14 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDQwMzc0ODllY2I2ZDUyNjAzZDQ1ZjMiLCJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0aW5nIiwiZW1haWwiOiJ0ZXN0QHRlc3RpbmcuY29tIiwiaWF0IjoxNTY0NzQ0NzQ4LCJleHAiOjE1NjQ3NTE5NDh9.gE2DjhWgNmPFyy7K21MEC4bIm3gbbDicdE_eorFIZ0o",
-								"type": "text"
-							}
 						],
 						"url": {
-							"raw": "http://localhost:3000/api/book/5d43d14a246036209713e667",
+							"raw": "{{HOST}}/api/book/5d43d14a246036209713e667",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"book",
@@ -340,12 +325,12 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/api/book/5d43d753cdbdd1264291806c",
+							"raw": "{{HOST}}/api/book/5d43d753cdbdd1264291806c",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"book",
@@ -367,16 +352,186 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:3000/api/book/5d43d753cdbdd1264291806c",
+							"raw": "{{HOST}}/api/book/5d43d753cdbdd1264291806c",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "3000",
+							"port": "4545",
 							"path": [
 								"api",
 								"book",
 								"5d43d753cdbdd1264291806c"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Camera Calibration",
+			"item": [
+				{
+					"name": "Store",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Minha calibração de teste\",\r\n    \"cameras\": [\r\n        \"idcamera-01\",\r\n        \"idcamera-02\",\r\n        \"idcamera-03\"\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/api/camera-calibration",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4545",
+							"path": [
+								"api",
+								"camera-calibration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List",
+					"request": {
+						"method": "GET",
+						"header": [
+						],
+						"url": {
+							"raw": "{{HOST}}/api/camera-calibration",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4545",
+							"path": [
+								"api",
+								"camera-calibration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+						],
+						"url": {
+							"raw": "{{HOST}}/api/book/5d43d14a246036209713e667",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4545",
+							"path": [
+								"api",
+								"book",
+								"5d43d14a246036209713e667"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDQwMzc0ODllY2I2ZDUyNjAzZDQ1ZjMiLCJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0aW5nIiwiZW1haWwiOiJ0ZXN0QHRlc3RpbmcuY29tIiwiaWF0IjoxNTY0OTkzMDgwLCJleHAiOjE1NjUwMDAyODB9.Lm0-ociCVNxhL7rnzeCO9i1mmJx1bZRQEJoPCNaHkIA",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "testing book 123 456",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "testing book desc 123 456",
+									"type": "text"
+								},
+								{
+									"key": "isbn",
+									"value": "3214htrff445",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{HOST}}/api/book/5d43d753cdbdd1264291806c",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4545",
+							"path": [
+								"api",
+								"book",
+								"5d43d753cdbdd1264291806c"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDQwMzc0ODllY2I2ZDUyNjAzZDQ1ZjMiLCJmaXJzdE5hbWUiOiJ0ZXN0IiwibGFzdE5hbWUiOiJ0ZXN0aW5nIiwiZW1haWwiOiJ0ZXN0QHRlc3RpbmcuY29tIiwiaWF0IjoxNTY1MDAxNzQ3LCJleHAiOjE1NjUwMDg5NDd9.NFq5JjFI4nEU7_1oAt2Zj91q0vRSdd3d5to-T_7aRJ4",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{HOST}}/api/camera-calibration/:id",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4545",
+							"path": [
+								"api",
+								"camera-calibration",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "619eeee94274c62368a1cdc8"
+								}
 							]
 						}
 					},

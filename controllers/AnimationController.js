@@ -1,30 +1,33 @@
-const Book = require("../models/BookModel");
+const Animation = require("../models/AnimationModel");
+const fs = require('fs');
 const { body,validationResult } = require("express-validator");
+const slugify = require("slugify");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 var mongoose = require("mongoose");
 mongoose.set("useFindAndModify", false);
 
-// Book Schema
-function BookData(data) {
+const path = `${process.env.STORAGE_FOLDER}${process.env.CALIBRATION_FOLDER}/`;
+
+// Animation Schema
+function AnimationData(data) {
 	this.id = data._id;
-	this.title= data.title;
-	this.description = data.description;
-	this.isbn = data.isbn;
+	this.name= data.name;
+	this.folder = data.folder;
 	this.createdAt = data.createdAt;
 }
 
 /**
- * Book List.
+ * Animation List.
  * 
  * @returns {Object}
  */
-exports.bookList = [
+exports.List = [
 	function (req, res) {
 		try {
-			Book.find({}, "_id title description isbn createdAt").then((books)=>{
-				if(books.length > 0){
-					return apiResponse.successResponseWithData(res, "Operation success", books);
+			Animation.find({}).then((response)=>{
+				if(response.length > 0){
+					return apiResponse.successResponseWithData(res, "Operation success", response);
 				}else{
 					return apiResponse.successResponseWithData(res, "Operation success", []);
 				}
@@ -37,22 +40,22 @@ exports.bookList = [
 ];
 
 /**
- * Book Detail.
+ * Animation Detail.
  * 
  * @param {string}      id
  * 
  * @returns {Object}
  */
-exports.bookDetail = [
+exports.Detail = [
 	function (req, res) {
 		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
 			return apiResponse.successResponseWithData(res, "Operation success", {});
 		}
 		try {
-			Book.findOne({_id: req.params.id},"_id title description isbn createdAt").then((book)=>{                
-				if(book !== null){
-					let bookData = new BookData(book);
-					return apiResponse.successResponseWithData(res, "Operation success", bookData);
+			Animation.findOne({_id: req.params.id},"_id name folder createdAt").then((animationData)=>{                
+				if(animationData !== null){
+					let animationDataData = new AnimationData(animationData);
+					return apiResponse.successResponseWithData(res, "Operation success", animationDataData);
 				}else{
 					return apiResponse.successResponseWithData(res, "Operation success", {});
 				}
@@ -65,43 +68,38 @@ exports.bookDetail = [
 ];
 
 /**
- * Book store.
+ * Animation store.
  * 
- * @param {string}      title 
- * @param {string}      description
- * @param {string}      isbn
+ * @param {string}      name 
  * 
  * @returns {Object}
  */
-exports.bookStore = [
-	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
-	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value) => {
-		return Book.findOne({isbn : value}).then(book => {
-			if (book) {
-				return Promise.reject("Book already exist with this ISBN no.");
-			}
-		});
-	}),
-	sanitizeBody("*").escape(),
+exports.Store = [
+	body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
+	sanitizeBody("name").escape(),
 	(req, res) => {
+		const {name} = req.body;
+		const folder = slugify(name);
+		if (!fs.existsSync(path+folder)){
+			fs.mkdirSync(path+folder, { recursive: true });
+		}
 		try {
 			const errors = validationResult(req);
-			var book = new Book(
-				{ title: req.body.title,
-					description: req.body.description,
-					isbn: req.body.isbn
+			var animationData = new Animation(
+				{ 
+					name,
+					folder
 				});
 
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}
 			else {
-				//Save book.
-				book.save(function (err) {
+				//Save animationData.
+				animationData.save(function (err) {
 					if (err) { return apiResponse.ErrorResponse(res, err); }
-					let bookData = new BookData(book);
-					return apiResponse.successResponseWithData(res,"Book add Success.", bookData);
+					let animationDataData = new AnimationData(animationData);
+					return apiResponse.successResponseWithData(res,"Animation add Success.", animationDataData);
 				});
 			}
 		} catch (err) {
@@ -112,7 +110,7 @@ exports.bookStore = [
 ];
 
 /**
- * Book update.
+ * Animation update.
  * 
  * @param {string}      title 
  * @param {string}      description
@@ -120,13 +118,13 @@ exports.bookStore = [
  * 
  * @returns {Object}
  */
-exports.bookUpdate = [
+exports.Update = [
 	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
 	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
 	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value,{req}) => {
-		return Book.findOne({isbn : value,user: req.user._id, _id: { "$ne": req.params.id }}).then(book => {
-			if (book) {
-				return Promise.reject("Book already exist with this ISBN no.");
+		return Animation.findOne({isbn : value,user: req.user._id, _id: { "$ne": req.params.id }}).then(animationData => {
+			if (animationData) {
+				return Promise.reject("Animation already exist with this ISBN no.");
 			}
 		});
 	}),
@@ -134,7 +132,7 @@ exports.bookUpdate = [
 	(req, res) => {
 		try {
 			const errors = validationResult(req);
-			var book = new Book(
+			var animationData = new Animation(
 				{ title: req.body.title,
 					description: req.body.description,
 					isbn: req.body.isbn,
@@ -148,21 +146,21 @@ exports.bookUpdate = [
 				if(!mongoose.Types.ObjectId.isValid(req.params.id)){
 					return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
 				}else{
-					Book.findById(req.params.id, function (err, foundBook) {
-						if(foundBook === null){
-							return apiResponse.notFoundResponse(res,"Book not exists with this id");
+					Animation.findById(req.params.id, function (err, foundAnimation) {
+						if(foundAnimation === null){
+							return apiResponse.notFoundResponse(res,"Animation not exists with this id");
 						}else{
 							//Check authorized user
-							if(foundBook.user.toString() !== req.user._id){
+							if(foundAnimation.user.toString() !== req.user._id){
 								return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
 							}else{
-								//update book.
-								Book.findByIdAndUpdate(req.params.id, book, {},function (err) {
+								//update animationData.
+								Animation.findByIdAndUpdate(req.params.id, animationData, {},function (err) {
 									if (err) { 
 										return apiResponse.ErrorResponse(res, err); 
 									}else{
-										let bookData = new BookData(book);
-										return apiResponse.successResponseWithData(res,"Book update Success.", bookData);
+										let animationDataData = new AnimationData(animationData);
+										return apiResponse.successResponseWithData(res,"Animation update Success.", animationDataData);
 									}
 								});
 							}
@@ -178,35 +176,30 @@ exports.bookUpdate = [
 ];
 
 /**
- * Book Delete.
+ * Animation Delete.
  * 
  * @param {string}      id
  * 
  * @returns {Object}
  */
-exports.bookDelete = [
+exports.Delete = [
 	function (req, res) {
 		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
 			return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
 		}
 		try {
-			Book.findById(req.params.id, function (err, foundBook) {
-				if(foundBook === null){
-					return apiResponse.notFoundResponse(res,"Book not exists with this id");
+			Animation.findById(req.params.id, function (err, foundAnimation) {
+				if(foundAnimation === null){
+					return apiResponse.notFoundResponse(res,"Animation not exists with this id");
 				}else{
-					//Check authorized user
-					if(foundBook.user.toString() !== req.user._id){
-						return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-					}else{
-						//delete book.
-						Book.findByIdAndRemove(req.params.id,function (err) {
-							if (err) { 
-								return apiResponse.ErrorResponse(res, err); 
-							}else{
-								return apiResponse.successResponse(res,"Book delete Success.");
-							}
-						});
-					}
+					//delete animationData.
+					Animation.findByIdAndRemove(req.params.id,function (err) {
+						if (err) { 
+							return apiResponse.ErrorResponse(res, err); 
+						}else{
+							return apiResponse.successResponse(res,"Animation delete Success.");
+						}
+					});
 				}
 			});
 		} catch (err) {
