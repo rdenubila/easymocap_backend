@@ -7,13 +7,14 @@ const apiResponse = require("../helpers/apiResponse");
 var mongoose = require("mongoose");
 mongoose.set("useFindAndModify", false);
 
-const path = `${process.env.STORAGE_FOLDER}${process.env.CALIBRATION_FOLDER}/`;
+const path = `${process.env.STORAGE_FOLDER}${process.env.ANIMATION_FOLDER}/`;
 
 // Animation Schema
 function AnimationData(data) {
 	this.id = data._id;
 	this.name= data.name;
 	this.folder = data.folder;
+	this.description = data.description;
 	this.createdAt = data.createdAt;
 }
 
@@ -71,6 +72,8 @@ exports.Detail = [
  * Animation store.
  * 
  * @param {string}      name 
+ * @param {string}      calibration 
+ * @param {string}      description 
  * 
  * @returns {Object}
  */
@@ -78,7 +81,7 @@ exports.Store = [
 	body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
 	sanitizeBody("name").escape(),
 	(req, res) => {
-		const {name} = req.body;
+		const {name, calibration, description} = req.body;
 		const folder = slugify(name);
 		if (!fs.existsSync(path+folder)){
 			fs.mkdirSync(path+folder, { recursive: true });
@@ -88,6 +91,8 @@ exports.Store = [
 			var animationData = new Animation(
 				{ 
 					name,
+					calibration,
+					description,
 					folder
 				});
 
