@@ -1,6 +1,6 @@
 const Animation = require("../models/AnimationModel");
 const fs = require('fs');
-const { body,validationResult } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const slugify = require("slugify");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
@@ -12,7 +12,8 @@ const path = `${process.env.STORAGE_FOLDER}${process.env.ANIMATION_FOLDER}/`;
 // Animation Schema
 function AnimationData(data) {
 	this.id = data._id;
-	this.name= data.name;
+	this.name = data.name;
+	this.persons = data.persons;
 	this.folder = data.folder;
 	this.description = data.description;
 	this.createdAt = data.createdAt;
@@ -26,10 +27,10 @@ function AnimationData(data) {
 exports.List = [
 	function (req, res) {
 		try {
-			Animation.find({}).then((response)=>{
-				if(response.length > 0){
+			Animation.find({}).then((response) => {
+				if (response.length > 0) {
 					return apiResponse.successResponseWithData(res, "Operation success", response);
-				}else{
+				} else {
 					return apiResponse.successResponseWithData(res, "Operation success", []);
 				}
 			});
@@ -49,15 +50,22 @@ exports.List = [
  */
 exports.Detail = [
 	function (req, res) {
-		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 			return apiResponse.successResponseWithData(res, "Operation success", {});
 		}
 		try {
-			Animation.findOne({_id: req.params.id},"_id name folder createdAt").then((animationData)=>{                
-				if(animationData !== null){
+			Animation.findOne({ _id: req.params.id }, "_id name persons description folder createdAt").then((animationData) => {
+				if (animationData !== null) {
+
+					const videos = [];
+
+					fs.readdirSync(`${path}${animationData.folder}/videos`).forEach(file => {
+						videos.push(file);
+					});
+
 					let animationDataData = new AnimationData(animationData);
-					return apiResponse.successResponseWithData(res, "Operation success", animationDataData);
-				}else{
+					return apiResponse.successResponseWithData(res, "Operation success", { ...animationDataData, ...{ videos } });
+				} else {
 					return apiResponse.successResponseWithData(res, "Operation success", {});
 				}
 			});
@@ -81,16 +89,27 @@ exports.Store = [
 	body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
 	sanitizeBody("name").escape(),
 	(req, res) => {
-		const {name, calibration, description} = req.body;
-		const folder = slugify(name);
-		if (!fs.existsSync(path+folder)){
-			fs.mkdirSync(path+folder, { recursive: true });
+
+		const { name, persons, calibration, description } = req.body;
+		const folderRaw = slugify(name);
+		let folder = slugify(name);
+
+		let i = 1;
+		while (fs.existsSync(path + folder)) {
+			folder = `${folderRaw}-${i}`;
+			i++;
 		}
+
+		if (!fs.existsSync(path + folder)) {
+			fs.mkdirSync(path + folder, { recursive: true });
+		}
+
 		try {
 			const errors = validationResult(req);
 			var animationData = new Animation(
-				{ 
+				{
 					name,
+					persons,
 					calibration,
 					description,
 					folder
@@ -104,7 +123,7 @@ exports.Store = [
 				animationData.save(function (err) {
 					if (err) { return apiResponse.ErrorResponse(res, err); }
 					let animationDataData = new AnimationData(animationData);
-					return apiResponse.successResponseWithData(res,"Animation add Success.", animationDataData);
+					return apiResponse.successResponseWithData(res, "Animation add Success.", animationDataData);
 				});
 			}
 		} catch (err) {
@@ -124,51 +143,36 @@ exports.Store = [
  * @returns {Object}
  */
 exports.Update = [
-	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
-	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value,{req}) => {
-		return Animation.findOne({isbn : value,user: req.user._id, _id: { "$ne": req.params.id }}).then(animationData => {
-			if (animationData) {
-				return Promise.reject("Animation already exist with this ISBN no.");
-			}
-		});
-	}),
-	sanitizeBody("*").escape(),
 	(req, res) => {
+		const { name, persons, calibration, description } = req.body;
 		try {
 			const errors = validationResult(req);
-			var animationData = new Animation(
-				{ title: req.body.title,
-					description: req.body.description,
-					isbn: req.body.isbn,
-					_id:req.params.id
-				});
+			var animationData = {
+				name,
+				persons,
+				calibration,
+				description,
+			};
 
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}
 			else {
-				if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+				if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 					return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
-				}else{
+				} else {
 					Animation.findById(req.params.id, function (err, foundAnimation) {
-						if(foundAnimation === null){
-							return apiResponse.notFoundResponse(res,"Animation not exists with this id");
-						}else{
-							//Check authorized user
-							if(foundAnimation.user.toString() !== req.user._id){
-								return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-							}else{
-								//update animationData.
-								Animation.findByIdAndUpdate(req.params.id, animationData, {},function (err) {
-									if (err) { 
-										return apiResponse.ErrorResponse(res, err); 
-									}else{
-										let animationDataData = new AnimationData(animationData);
-										return apiResponse.successResponseWithData(res,"Animation update Success.", animationDataData);
-									}
-								});
-							}
+						if (foundAnimation === null) {
+							return apiResponse.notFoundResponse(res, "Animation not exists with this id");
+						} else {
+							Animation.findByIdAndUpdate(req.params.id, animationData, {}, function (err) {
+								if (err) {
+									return apiResponse.ErrorResponse(res, err);
+								} else {
+									let animationDataData = new AnimationData(animationData);
+									return apiResponse.successResponseWithData(res, "Animation update Success.", animationDataData);
+								}
+							});
 						}
 					});
 				}
@@ -189,20 +193,20 @@ exports.Update = [
  */
 exports.Delete = [
 	function (req, res) {
-		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 			return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
 		}
 		try {
 			Animation.findById(req.params.id, function (err, foundAnimation) {
-				if(foundAnimation === null){
-					return apiResponse.notFoundResponse(res,"Animation not exists with this id");
-				}else{
+				if (foundAnimation === null) {
+					return apiResponse.notFoundResponse(res, "Animation not exists with this id");
+				} else {
 					//delete animationData.
-					Animation.findByIdAndRemove(req.params.id,function (err) {
-						if (err) { 
-							return apiResponse.ErrorResponse(res, err); 
-						}else{
-							return apiResponse.successResponse(res,"Animation delete Success.");
+					Animation.findByIdAndRemove(req.params.id, function (err) {
+						if (err) {
+							return apiResponse.ErrorResponse(res, err);
+						} else {
+							return apiResponse.successResponse(res, "Animation delete Success.");
 						}
 					});
 				}
