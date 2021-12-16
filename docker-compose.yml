@@ -10,3 +10,5 @@ services:
       - ./mongodb-data:/data/db
     ports:
       - 27017:27017
+  ffmpeg:
+    image: linuxserver/ffmpeg

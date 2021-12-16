@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = `${process.env.STORAGE_FOLDER}`;
 const apiResponse = require("../helpers/apiResponse");
+const { rotateVideo } = require("../services/VideoService");
 
 /**
  * Video
@@ -16,7 +17,11 @@ exports.saveVideo = [
 			if (err) {
 				return apiResponse.ErrorResponse(res, err);
 			} else {
-				return apiResponse.successResponseWithData(res, "Temp video created", {
+
+				if (req.body.rotation)
+					rotateVideo(req.body.dir, `${req.body.camId}.mp4`, req.body.rotation);
+					
+				return apiResponse.successResponseWithData(res, "video created", {
 					filename
 				});
 			}
