@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = `${process.env.STORAGE_FOLDER}`;
 const apiResponse = require("../helpers/apiResponse");
-const { rotateVideo } = require("../services/VideoService");
+const { convertVideo } = require("../services/VideoService");
 
 /**
  * Video
@@ -10,17 +10,23 @@ const { rotateVideo } = require("../services/VideoService");
  */
 exports.saveVideo = [
 	function (req, res) {
-		fs.mkdirSync(`${path}/${req.body.dir}`, { recursive: true });
-		const filename = `${path}/${req.body.dir}/${req.body.camId}.mp4`;
+		const destinationRaw = `${path}/${req.body.dir}/raw/`;
+		const destinationVideo = `${path}/${req.body.dir}/videos/`;
+
+		fs.mkdirSync(`${destinationRaw}`, { recursive: true });
+		fs.mkdirSync(`${destinationVideo}`, { recursive: true });
+
+		const filename = `${destinationRaw}/${req.body.camId}.mp4`;
 		let base64Video = req.body.video.split(";base64,").pop();
 		fs.writeFile(filename, base64Video, { encoding: "base64" }, function (err) {
 			if (err) {
 				return apiResponse.ErrorResponse(res, err);
 			} else {
 
-				if (req.body.rotation)
-					rotateVideo(req.body.dir, `${req.body.camId}.mp4`, req.body.rotation);
-					
+				convertVideo(req.body.dir, `${req.body.camId}.mp4`, {
+					rotation: req.body.rotation
+				});
+
 				return apiResponse.successResponseWithData(res, "video created", {
 					filename
 				});
