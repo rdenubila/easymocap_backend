@@ -1,10 +1,13 @@
 const CameraCalibration = require("../models/CameraCalibrationModel");
 const fs = require('fs');
-const { body,validationResult } = require("express-validator");
+const pathResolver = require("path");
+const { body, validationResult } = require("express-validator");
 const slugify = require("slugify");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 var mongoose = require("mongoose");
+const { calibrationStatus } = require("../services/FolderCheckService");
+const { extractVideo, detectChessboard, calibration } = require("../services/VideoService");
 mongoose.set("useFindAndModify", false);
 
 const path = `${process.env.STORAGE_FOLDER}${process.env.CALIBRATION_FOLDER}/`;
@@ -12,7 +15,7 @@ const path = `${process.env.STORAGE_FOLDER}${process.env.CALIBRATION_FOLDER}/`;
 // CameraCalibration Schema
 function CameraCalibrationData(data) {
 	this.id = data._id;
-	this.name= data.name;
+	this.name = data.name;
 	this.folder = data.folder;
 	this.cameras = data.cameras;
 	this.createdAt = data.createdAt;
@@ -26,10 +29,10 @@ function CameraCalibrationData(data) {
 exports.List = [
 	function (req, res) {
 		try {
-			CameraCalibration.find({}).then((cameraCalibrations)=>{
-				if(cameraCalibrations.length > 0){
+			CameraCalibration.find({}).then((cameraCalibrations) => {
+				if (cameraCalibrations.length > 0) {
 					return apiResponse.successResponseWithData(res, "Operation success", cameraCalibrations);
-				}else{
+				} else {
 					return apiResponse.successResponseWithData(res, "Operation success", []);
 				}
 			});
@@ -49,15 +52,19 @@ exports.List = [
  */
 exports.Detail = [
 	function (req, res) {
-		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 			return apiResponse.successResponseWithData(res, "Operation success", {});
 		}
 		try {
-			CameraCalibration.findOne({_id: req.params.id},"_id name folder cameras createdAt").then((cameraCalibration)=>{                
-				if(cameraCalibration !== null){
+			CameraCalibration.findOne({ _id: req.params.id }, "_id name folder cameras createdAt").then((cameraCalibration) => {
+				if (cameraCalibration !== null) {
 					let cameraCalibrationData = new CameraCalibrationData(cameraCalibration);
-					return apiResponse.successResponseWithData(res, "Operation success", cameraCalibrationData);
-				}else{
+					let status = calibrationStatus(cameraCalibrationData.folder);
+					return apiResponse.successResponseWithData(res, "Operation success", {
+						...cameraCalibrationData,
+						...{ status }
+					});
+				} else {
 					return apiResponse.successResponseWithData(res, "Operation success", {});
 				}
 			});
@@ -80,18 +87,17 @@ exports.Store = [
 	body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
 	sanitizeBody("name").escape(),
 	(req, res) => {
-		const {name, cameras} = req.body;
+		const { name } = req.body;
 		const folder = slugify(name);
-		if (!fs.existsSync(path+folder)){
-			fs.mkdirSync(path+folder, { recursive: true });
+		if (!fs.existsSync(path + folder)) {
+			fs.mkdirSync(path + folder, { recursive: true });
 		}
 		try {
 			const errors = validationResult(req);
 			var cameraCalibration = new CameraCalibration(
-				{ 
-					name,
+				{
 					folder,
-					cameras
+					...req.body
 				});
 
 			if (!errors.isEmpty()) {
@@ -102,7 +108,7 @@ exports.Store = [
 				cameraCalibration.save(function (err) {
 					if (err) { return apiResponse.ErrorResponse(res, err); }
 					let cameraCalibrationData = new CameraCalibrationData(cameraCalibration);
-					return apiResponse.successResponseWithData(res,"CameraCalibration add Success.", cameraCalibrationData);
+					return apiResponse.successResponseWithData(res, "CameraCalibration add Success.", cameraCalibrationData);
 				});
 			}
 		} catch (err) {
@@ -124,8 +130,8 @@ exports.Store = [
 exports.Update = [
 	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
 	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value,{req}) => {
-		return CameraCalibration.findOne({isbn : value,user: req.user._id, _id: { "$ne": req.params.id }}).then(cameraCalibration => {
+	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value, { req }) => {
+		return CameraCalibration.findOne({ isbn: value, user: req.user._id, _id: { "$ne": req.params.id } }).then(cameraCalibration => {
 			if (cameraCalibration) {
 				return Promise.reject("CameraCalibration already exist with this ISBN no.");
 			}
@@ -136,34 +142,35 @@ exports.Update = [
 		try {
 			const errors = validationResult(req);
 			var cameraCalibration = new CameraCalibration(
-				{ title: req.body.title,
+				{
+					title: req.body.title,
 					description: req.body.description,
 					isbn: req.body.isbn,
-					_id:req.params.id
+					_id: req.params.id
 				});
 
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}
 			else {
-				if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+				if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 					return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
-				}else{
+				} else {
 					CameraCalibration.findById(req.params.id, function (err, foundCameraCalibration) {
-						if(foundCameraCalibration === null){
-							return apiResponse.notFoundResponse(res,"CameraCalibration not exists with this id");
-						}else{
+						if (foundCameraCalibration === null) {
+							return apiResponse.notFoundResponse(res, "CameraCalibration not exists with this id");
+						} else {
 							//Check authorized user
-							if(foundCameraCalibration.user.toString() !== req.user._id){
+							if (foundCameraCalibration.user.toString() !== req.user._id) {
 								return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-							}else{
+							} else {
 								//update cameraCalibration.
-								CameraCalibration.findByIdAndUpdate(req.params.id, cameraCalibration, {},function (err) {
-									if (err) { 
-										return apiResponse.ErrorResponse(res, err); 
-									}else{
+								CameraCalibration.findByIdAndUpdate(req.params.id, cameraCalibration, {}, function (err) {
+									if (err) {
+										return apiResponse.ErrorResponse(res, err);
+									} else {
 										let cameraCalibrationData = new CameraCalibrationData(cameraCalibration);
-										return apiResponse.successResponseWithData(res,"CameraCalibration update Success.", cameraCalibrationData);
+										return apiResponse.successResponseWithData(res, "CameraCalibration update Success.", cameraCalibrationData);
 									}
 								});
 							}
@@ -187,20 +194,20 @@ exports.Update = [
  */
 exports.Delete = [
 	function (req, res) {
-		if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
 			return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
 		}
 		try {
 			CameraCalibration.findById(req.params.id, function (err, foundCameraCalibration) {
-				if(foundCameraCalibration === null){
-					return apiResponse.notFoundResponse(res,"CameraCalibration not exists with this id");
-				}else{
+				if (foundCameraCalibration === null) {
+					return apiResponse.notFoundResponse(res, "CameraCalibration not exists with this id");
+				} else {
 					//delete cameraCalibration.
-					CameraCalibration.findByIdAndRemove(req.params.id,function (err) {
-						if (err) { 
-							return apiResponse.ErrorResponse(res, err); 
-						}else{
-							return apiResponse.successResponse(res,"CameraCalibration delete Success.");
+					CameraCalibration.findByIdAndRemove(req.params.id, function (err) {
+						if (err) {
+							return apiResponse.ErrorResponse(res, err);
+						} else {
+							return apiResponse.successResponse(res, "CameraCalibration delete Success.");
 						}
 					});
 				}
@@ -211,3 +218,57 @@ exports.Delete = [
 		}
 	}
 ];
+
+
+exports.ExtractVideos = [
+	function (req, res) {
+		CameraCalibration.findOne({ _id: req.params.id }).then((cameraCalibration) => {
+			if (cameraCalibration !== null) {
+				const folder = cameraCalibration.folder;
+				extractVideo(`calibration/${folder}/intri`);
+				extractVideo(`calibration/${folder}/extri`);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.DetectChessboard = [
+	async function (req, res) {
+		CameraCalibration.findOne({ _id: req.params.id }).then((cameraCalibration) => {
+			if (cameraCalibration !== null) {
+				const folder = cameraCalibration.folder;
+				detectChessboard(`calibration/${folder}`);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.CalibrationCommands = [
+	async function (req, res) {
+		CameraCalibration.findOne({ _id: req.params.id }).then((cameraCalibration) => {
+			if (cameraCalibration !== null) {
+				const folder = cameraCalibration.folder;
+				calibration(`calibration/${folder}`);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.CopyCalibrationFiles = (id, destination) => {
+	CameraCalibration.findById(id).then((cameraCalibration) => {
+		const src = `${pathResolver.resolve("./storage")}/calibration/${cameraCalibration.folder}/intri/output/`;
+		const dest = `${pathResolver.resolve("./storage")}/${destination}/`;
+		fs.copyFileSync(`${src}intri.yml`, `${dest}intri.yml`);
+		fs.copyFileSync(`${src}extri.yml`, `${dest}extri.yml`);
+	});
+};
+

@@ -5,6 +5,9 @@ const slugify = require("slugify");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 var mongoose = require("mongoose");
+const { animationStatus } = require("../services/FolderCheckService");
+const { extractVideo, smplReconstruction, exportBvh } = require("../services/VideoService");
+const { CopyCalibrationFiles } = require("./CameraCalibrationController");
 mongoose.set("useFindAndModify", false);
 
 const path = `${process.env.STORAGE_FOLDER}${process.env.ANIMATION_FOLDER}/`;
@@ -14,6 +17,7 @@ function AnimationData(data) {
 	this.id = data._id;
 	this.name = data.name;
 	this.persons = data.persons;
+	this.calibration = data.calibration;
 	this.folder = data.folder;
 	this.description = data.description;
 	this.createdAt = data.createdAt;
@@ -54,17 +58,28 @@ exports.Detail = [
 			return apiResponse.successResponseWithData(res, "Operation success", {});
 		}
 		try {
-			Animation.findOne({ _id: req.params.id }, "_id name persons description folder createdAt").then((animationData) => {
+			Animation.findOne({ _id: req.params.id }).then((animationData) => {
 				if (animationData !== null) {
 
 					const videos = [];
+					const bvh = [];
 
-					fs.readdirSync(`${path}${animationData.folder}/videos`).forEach(file => {
-						videos.push(file);
-					});
+					if (fs.existsSync(`${path}${animationData.folder}/videos`)) {
+						fs.readdirSync(`${path}${animationData.folder}/videos`).forEach(file => {
+							videos.push(file);
+						});
+					}
+
+					if (fs.existsSync(`${path}${animationData.folder}/output/bvh`)) {
+						fs.readdirSync(`${path}${animationData.folder}/output/bvh`).forEach(file => {
+							bvh.push(file);
+						});
+					}
+
+					let status = animationStatus(animationData.folder);
 
 					let animationDataData = new AnimationData(animationData);
-					return apiResponse.successResponseWithData(res, "Operation success", { ...animationDataData, ...{ videos } });
+					return apiResponse.successResponseWithData(res, "Operation success", { ...animationDataData, ...{ status }, ...{ videos, bvh } });
 				} else {
 					return apiResponse.successResponseWithData(res, "Operation success", {});
 				}
@@ -215,5 +230,49 @@ exports.Delete = [
 			//throw error in json response with status 500. 
 			return apiResponse.ErrorResponse(res, err);
 		}
+	}
+];
+
+
+exports.ExtractVideos = [
+	function (req, res) {
+		Animation.findOne({ _id: req.params.id }).then((data) => {
+			if (data !== null) {
+				const folder = data.folder;
+				extractVideo(`animation/${folder}`, true);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.SmplReconstruction = [
+	function (req, res) {
+		Animation.findOne({ _id: req.params.id }).then((data) => {
+			if (data !== null) {
+				const folder = data.folder;
+				CopyCalibrationFiles(data.calibration, `animation/${folder}`);
+				smplReconstruction(`animation/${folder}`, data.persons, req.body.start, req.body.end);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.BvhExport = [
+	function (req, res) {
+		Animation.findOne({ _id: req.params.id }).then((data) => {
+			if (data !== null) {
+				const folder = data.folder;
+				exportBvh(`animation/${folder}`);
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
 	}
 ];

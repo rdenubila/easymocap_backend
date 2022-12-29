@@ -8,6 +8,11 @@
     "test": "nyc _mocha --timeout 10000 --exit --report lcovonly -- -R spec",
     "lint": "eslint --fix --config .eslintrc.json \"**/*.js\""
   },
+  "nodemonConfig": {
+    "ignore": [
+      "storage/*"
+    ]
+  },
   "dependencies": {
     "bcrypt": "^3.0.6",
     "codacy-coverage": "^3.4.0",
@@ -25,6 +30,7 @@
     "mongoose": "^5.7.6",
     "morgan": "~1.9.0",
     "nodemailer": "^6.3.1",
+    "peer": "^0.6.1",
     "slugify": "^1.6.3"
   },
   "devDependencies": {

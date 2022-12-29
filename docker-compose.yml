@@ -10,5 +10,11 @@ services:
       - ./mongodb-data:/data/db
     ports:
       - 27017:27017
+
   ffmpeg:
     image: linuxserver/ffmpeg
+
+  peerjs-server:
+    image: peerjs/peerjs-server
+    ports:
+      - 9000:9000
