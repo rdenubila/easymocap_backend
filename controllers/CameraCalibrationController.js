@@ -8,6 +8,7 @@ const apiResponse = require("../helpers/apiResponse");
 var mongoose = require("mongoose");
 const { calibrationStatus } = require("../services/FolderCheckService");
 const { extractVideo, detectChessboard, calibration } = require("../services/VideoService");
+const { listFolder, deleteFile, renameFile } = require("../helpers/utility");
 mongoose.set("useFindAndModify", false);
 
 const path = `${process.env.STORAGE_FOLDER}${process.env.CALIBRATION_FOLDER}/`;
@@ -228,6 +229,59 @@ exports.ExtractVideos = [
 				extractVideo(`calibration/${folder}/intri`);
 				extractVideo(`calibration/${folder}/extri`);
 				return apiResponse.successResponseWithData(res, "Operation success", {});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+
+exports.GetImages = [
+	function (req, res) {
+		CameraCalibration.findOne({ _id: req.params.id }).then((cameraCalibration) => {
+			if (cameraCalibration !== null) {
+				const folder = cameraCalibration.folder;
+
+				const cameras = listFolder(`./storage/calibration/${folder}/intri/images`);
+
+				const intri = cameras.map(cam => ({
+					folder: cam,
+					files: listFolder(`./storage/calibration/${folder}/intri/images/${cam}`)
+				}));
+
+				const extri = cameras.map(cam => ({
+					folder: cam,
+					files: listFolder(`./storage/calibration/${folder}/extri/images/${cam}`)
+				}));
+
+				return apiResponse.successResponseWithData(res, "Operation success", {
+					folder, intri, extri
+				});
+			} else {
+				return apiResponse.successResponseWithData(res, "Operation success", {});
+			}
+		});
+	}
+];
+
+exports.SelectImage = [
+	function (req, res) {
+		const { cam, image, type } = req.body;
+		CameraCalibration.findOne({ _id: req.params.id }).then((cameraCalibration) => {
+			if (cameraCalibration !== null) {
+				const folder = cameraCalibration.folder;
+				const dir = `./storage/calibration/${folder}/${type}/images/${cam}`;
+				const files = listFolder(dir);
+				const filesToDelete = files.filter(name => name !== image);
+
+				for (const fileToRemove of filesToDelete) {
+					deleteFile(`${dir}/${fileToRemove}`)
+				}
+
+				renameFile(`${dir}/${image}`, `${dir}/000000.jpg`);
+
+				return apiResponse.successResponseWithData(res, "Operation success", { filesToDelete });
 			} else {
 				return apiResponse.successResponseWithData(res, "Operation success", {});
 			}

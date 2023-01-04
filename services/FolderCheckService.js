@@ -29,7 +29,7 @@ const animationStatus = (folder) => {
 		raw: hasContent(`${animation}${folder}/raw`),
 		videos: hasContent(`${animation}${folder}/videos`),
 		images: hasContent(`${animation}${folder}/images`),
-		openpose: hasContent(`${animation}${folder}/openpose`),
+		openpose: hasContent(`${animation}${folder}/annots`) || hasContent(`${animation}${folder}/openpose`),
 		smpl: hasContent(`${animation}${folder}/output/smpl/smpl`),
 		bvh: hasContent(`${animation}${folder}/output/bvh`),
 	};
