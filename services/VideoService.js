@@ -65,7 +65,7 @@ function exportBvh(folder) {
 	console.log(path.resolve("./storage") + "/" + folder + "/output/bvh");
 	fs.mkdirSync(path.resolve("./storage") + "/" + folder + "/output/bvh", { recursive: true });
 	const data = `/usr/src/easymocap/storage/${folder}`;
-	const command = `docker run --rm --gpus all -v ${path.resolve("./storage")}:/usr/src/easymocap/storage ${easymocapImageName} /usr/src/blender/blender/blender -b -t 12 -P scripts/postprocess/convert2bvh.py -- ${data}/output/smpl/smpl --o ${data}/output/bvh`;
+	const command = `docker run --rm --gpus all -v ${path.resolve("./storage")}:/usr/src/easymocap/storage ${easymocapImageName} /blender/blender -b -t 12 -P scripts/postprocess/convert2bvh-fixed.py -- ${data}/output/smpl/smpl --o ${data}/output/bvh`;
 	Command.Store(`Export BVH: ${folder}`, command);
 }
 
