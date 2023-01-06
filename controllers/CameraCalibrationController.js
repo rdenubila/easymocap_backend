@@ -319,7 +319,7 @@ exports.CalibrationCommands = [
 
 exports.CopyCalibrationFiles = (id, destination) => {
 	CameraCalibration.findById(id).then((cameraCalibration) => {
-		const src = `${pathResolver.resolve("./storage")}/calibration/${cameraCalibration.folder}/intri/output/`;
+		const src = `${pathResolver.resolve("./storage")}/calibration/${cameraCalibration.folder}/extri/`;
 		const dest = `${pathResolver.resolve("./storage")}/${destination}/`;
 		fs.copyFileSync(`${src}intri.yml`, `${dest}intri.yml`);
 		fs.copyFileSync(`${src}extri.yml`, `${dest}extri.yml`);

@@ -83,7 +83,7 @@ async function detectChessboard(folder) {
 async function calibration(folder) {
 	const intri = `/usr/src/easymocap/storage/${folder}/intri`;
 	const extri = `/usr/src/easymocap/storage/${folder}/extri`;
-	const intriCommand = `docker run --rm --gpus all -v ${path.resolve("./storage")}:/usr/src/easymocap/storage ${easymocapImageName} ${pythonVersion} apps/calibration/calib_intri.py ${intri} --step 5 `;
+	const intriCommand = `docker run --rm --gpus all -v ${path.resolve("./storage")}:/usr/src/easymocap/storage ${easymocapImageName} ${pythonVersion} apps/calibration/calib_intri.py ${intri}`;
 	await Command.Store(`Calibration - Intrinsic Parameters: ${folder}`, intriCommand);
 
 	const extriCommand = `docker run --rm --gpus all -v ${path.resolve("./storage")}:/usr/src/easymocap/storage ${easymocapImageName} ${pythonVersion} apps/calibration/calib_extri.py ${extri} --intri ${intri}/output/intri.yml`;
